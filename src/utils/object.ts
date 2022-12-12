@@ -1,5 +1,24 @@
+import { plainToInstance, ClassConstructor } from "class-transformer";
+import { validate } from "class-validator";
+
 import text from "../text";
 import { RestError } from "./error";
+
+export async function validation<T extends object>(
+  cls: ClassConstructor<T>,
+  object: any
+): Promise<{ [type: string]: string }[]> {
+  const output = plainToInstance(cls, object);
+
+  const errors = await validate(output);
+  // errors is an array of validation errors
+  let errorTexts = Array();
+  for (const errorItem of errors) {
+    errorTexts = errorTexts.concat(errorItem.constraints);
+  }
+
+  return errorTexts;
+}
 
 export function validateFields(
   data: { [x: string]: any },

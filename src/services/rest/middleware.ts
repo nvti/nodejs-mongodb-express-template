@@ -1,12 +1,14 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import { rateLimit } from "express-rate-limit";
+import { plainToInstance, ClassConstructor } from "class-transformer";
+import { validate } from "class-validator";
 
 import logger from "../../logger";
 import * as auth from "../auth";
 import db from "../database";
 import text from "../../text";
-import { validate } from "class-validator";
 import { LoginReq } from "../../models/user";
+import { validation } from "../../utils/object";
 
 export async function authMiddleware(
   req: Request,
@@ -55,24 +57,22 @@ export function publicApiLimiter(maxPerMinute: number = 6): RequestHandler {
   });
 }
 
-export function validation<T extends object>() {
-  return function (req: Request, res: Response, next: NextFunction) {
-    const output: LoginReq = req.body;
-    logger.info(typeof output);
-    validate(output).then((errors) => {
-      // errors is an array of validation errors
-      if (errors.length > 0) {
-        console.log(errors);
-        let errorTexts = Array();
-        for (const errorItem of errors) {
-          errorTexts = errorTexts.concat(errorItem.constraints);
-        }
-        res.status(400).send(errorTexts);
-        return;
-      } else {
-        res.locals.input = output;
-        next();
+export function validationMiddleware<T extends object>(
+  cls: ClassConstructor<T>
+): RequestHandler {
+  return async function (req: Request, res: Response, next: NextFunction) {
+    const errors = await validation(cls, req.body);
+    // errors is an array of validation errors
+    if (errors.length > 0) {
+      let errorTexts = Array();
+      for (const errorItem of errors) {
+        errorTexts = errorTexts.concat(errorItem.constraints);
       }
-    });
+      logger.error(errorTexts);
+      res.status(400).send(errorTexts);
+      return;
+    } else {
+      next();
+    }
   };
 }

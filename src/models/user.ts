@@ -1,4 +1,12 @@
-import { IsString, MaxLength, MinLength } from "class-validator";
+import {
+  IsString,
+  IsEnum,
+  Validate,
+  ValidationArguments,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+} from "class-validator";
+import { validatePhoneNumber } from "../utils/phone-number";
 
 export enum status {
   NO_PROFILE = "no_profile",
@@ -42,58 +50,89 @@ export interface User extends UserInfo {
   noti_token?: string;
 }
 
-export interface CreateUserReq {
+@ValidatorConstraint({ name: "IsPhoneNumber", async: false })
+export class IsPhoneNumber implements ValidatorConstraintInterface {
+  validate(phone_number: string, args: ValidationArguments) {
+    return validatePhoneNumber(phone_number);
+  }
+
+  defaultMessage(args: ValidationArguments) {
+    return "Phone number ($value) is not valid!";
+  }
+}
+
+export class CreateUserReq {
+  @Validate(IsPhoneNumber)
   phone_number: string;
+
+  @IsString()
   password: string;
+
+  @IsString()
   name: string;
+
+  @IsString()
   token: string;
 }
 
 export class LoginReq {
-  @IsString()
-  @MinLength(10)
-  @MaxLength(12)
+  @Validate(IsPhoneNumber)
   phone_number: string;
 
   @IsString()
   password: string;
 }
 
-export interface GetUserReq {
+export class GetUserReq {
+  @Validate(IsPhoneNumber)
   phone_number: string;
 }
 
-export interface DeleteUserReq {
+export class DeleteUserReq {
+  @IsString()
   password: string;
 }
 
-export interface ForgotPasswordReq {
+export class ForgotPasswordReq {
+  @Validate(IsPhoneNumber)
   phone_number: string;
+
+  @IsString()
   token: string;
+
+  @IsString()
   password: string;
 }
 
-export interface ChangePasswordReq {
+export class ChangePasswordReq {
+  @IsString()
   old_password: string;
+
+  @IsString()
   new_password: string;
 }
 
-export interface SetNotiTokenReq {
+export class SetNotiTokenReq {
+  @IsString()
   token: string;
 }
 
-export interface SetUserTypeReq {
+export class SetUserTypeReq {
+  @IsEnum(type)
   type: type;
 }
 
-export interface SetUserStatusReq {
+export class SetUserStatusReq {
+  @IsEnum(status)
   status: status;
 }
 
-export interface SetUserNameReq {
+export class SetUserNameReq {
+  @IsString()
   name: string;
 }
 
-export interface SetUserAvatarReq {
+export class SetUserAvatarReq {
+  @IsString()
   avatar: string;
 }
