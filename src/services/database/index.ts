@@ -1,3 +1,3 @@
-import * as db from "./mongo";
+import db from "./mongo";
 
 export default db;

@@ -1,0 +1,25 @@
+version: "3"
+services:
+  app:
+    build: .
+    # restart: always
+    environment:
+      - SERVER_PORT=5000
+      - DB_URL=mongodb://root:SuperSecret@db:27017/
+    volumes:
+      - ./data/logs:/service/logs
+    ports:
+      - 5001:5000
+    depends_on:
+      - db
+
+  db:
+    image: mongo:6
+    # restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: SuperSecret
+    ports:
+      - 27017:27017
+    volumes:
+      - ./data/mongo:/data/db

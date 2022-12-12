@@ -3,18 +3,14 @@ import jwt from "jsonwebtoken";
 
 import config from "../../config";
 import logger from "../../logger";
-import { comparePhoneNumber } from "../../utils/phone-number";
+import { Password } from "../../models/user";
 
 /**
  *
  * @param {string} password
  * @returns {{salt: string; hash: string; iterations: number}}
  */
-export function hashPassword(password: string): {
-  salt: string;
-  hash: string;
-  iterations: number;
-} {
+export function hashPassword(password: string): Password {
   const salt = crypto.randomBytes(32).toString("base64");
   const hash = crypto
     .pbkdf2Sync(password, salt, config.auth.hash_iterations, 64, "sha256")
@@ -27,14 +23,8 @@ export function hashPassword(password: string): {
   };
 }
 
-/**
- *
- * @param {{ password: { salt: string; iterations: number; hash: string; }; }} user
- * @param {string} password
- * @returns {boolean}
- */
 export function verifyPassword(
-  user: { password: { salt: string; iterations: number; hash: string } },
+  user: { password: Password },
   password: string
 ): boolean {
   const salt = user.password.salt;
@@ -45,22 +35,12 @@ export function verifyPassword(
   return hash === user.password.hash;
 }
 
-/**
- *
- * @param {{ phone_number: string; }} user
- * @returns {string}
- */
 export function generateToken(user: { phone_number: string }): string {
   return jwt.sign({ phone_number: user.phone_number }, config.auth.jwt_secret, {
     expiresIn: config.auth.jwt_expire_in,
   });
 }
 
-/**
- *
- * @param {string} token
- * @returns {{phone_number: string; auth_session: string} | undefined}
- */
 export function verifyToken(
   token: string
 ): { phone_number: string; auth_session: string } | undefined {
@@ -88,29 +68,6 @@ export function verifyToken(
   }
 }
 
-/**
- *
- * @param {string} token
- * @param {string} phoneNumber
- * @returns {Promise<boolean>}
- */
-// export async function verifyFirebaseToken(
-//   token: string,
-//   phoneNumber: string
-// ): Promise<boolean> {
-//   const firebasePhoneNumber = await getPhoneNumber(token);
-//   if (!firebasePhoneNumber) {
-//     return false;
-//   }
-
-//   return comparePhoneNumber(firebasePhoneNumber, phoneNumber);
-// }
-
-/**
- *
- * @param {string} url
- * @returns {string}
- */
 export function signURL(url: string): string {
   // TODO: sign url
 

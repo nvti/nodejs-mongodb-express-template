@@ -6,7 +6,8 @@ import http, { Server } from "http";
 import logger from "../../logger";
 import { restLogger } from "./logger";
 import { authMiddleware, publicApiLimiter } from "./middleware";
-import { RespError } from "./error";
+import { createUserRoute } from "./route/user";
+import { createPublicRoute } from "./route/public";
 
 export class WebServer {
   port: number;
@@ -39,5 +40,16 @@ export class WebServer {
     });
   }
 
-  setupRoute() {}
+  setupRoute() {
+    const publicRoute = createPublicRoute();
+    this.app.use("/", publicRoute, (req, res) => {
+      res.sendStatus(404);
+    });
+
+    // add user route
+    const userRoute = createUserRoute();
+    this.app.use("/user", userRoute, (req, res) => {
+      res.sendStatus(404);
+    });
+  }
 }

@@ -4,7 +4,7 @@ dotenv.config();
 const config = {
   port: Number(process.env["SERVER_PORT"]) || 3000,
   db: {
-    url: process.env["DB_URL"] || "mongodb://root:SuperSecret@db:27017/",
+    url: process.env["DB_URL"] || "mongodb://root:SuperSecret@localhost:27017/",
   },
   auth: {
     hash_iterations: Number(process.env["HASH_ITERATIONS"]) || 10000,

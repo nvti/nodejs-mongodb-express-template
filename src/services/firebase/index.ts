@@ -3,6 +3,7 @@ import { Message } from "firebase-admin/lib/messaging/messaging-api";
 
 import config from "../../config";
 import logger from "../../logger";
+import { comparePhoneNumber } from "../../utils/phone-number";
 
 const serviceAccount = require("../../../" + config.firebase_cert);
 
@@ -10,11 +11,6 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-/**
- *
- * @param {string} token
- * @returns {Promise<string | undefined>}
- */
 export async function getPhoneNumber(
   token: string
 ): Promise<string | undefined> {
@@ -27,6 +23,17 @@ export async function getPhoneNumber(
   }
 }
 
+export async function verifyFirebaseToken(
+  token: string,
+  phoneNumber: string
+): Promise<boolean> {
+  const firebasePhoneNumber = await getPhoneNumber(token);
+  if (!firebasePhoneNumber) {
+    return false;
+  }
+
+  return comparePhoneNumber(firebasePhoneNumber, phoneNumber);
+}
 // /**
 //  *
 //  * @param {string} path
@@ -44,12 +51,6 @@ export async function getPhoneNumber(
 //   return bucket.file(path).download();
 // }
 
-/**
- *
- * @param {string | string[] | undefined} tokens
- * @param {import("firebase-admin/lib/messaging/messaging-api").MessagingPayload} data
- * @returns
- */
 export async function sendNotification(tokens: string | string[], data: any) {
   if (!tokens || (Array.isArray(tokens) && tokens.length === 0)) {
     return;
@@ -63,10 +64,6 @@ export async function sendNotification(tokens: string | string[], data: any) {
   }
 }
 
-/**
- *
- * @param {import("firebase-admin/lib/messaging/messaging-api").Message[]} messages
- */
 export async function sendBatchNotification(messages: Message[]) {
   try {
     await admin.messaging().sendAll(messages);
@@ -75,20 +72,10 @@ export async function sendBatchNotification(messages: Message[]) {
     throw err;
   }
 }
-/**
- *
- * @param {string} topic
- * @param {string | string[]} tokens
- */
 export async function addToTopic(topic: string, tokens: string | string[]) {
   await admin.messaging().subscribeToTopic(tokens, topic);
 }
 
-/**
- *
- * @param {string} topic
- * @param {string | string[]} tokens
- */
 export async function removeFromTopic(
   topic: string,
   tokens: string | string[]

@@ -1,14 +1,16 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction, RequestHandler } from "express";
 import { rateLimit } from "express-rate-limit";
 
 import logger from "../../logger";
 import * as auth from "../auth";
 import db from "../database";
 import text from "../../text";
+import { validate } from "class-validator";
+import { LoginReq } from "../../models/user";
 
 export async function authMiddleware(
-  req: Request<any>,
-  res: Response<any>,
+  req: Request,
+  res: Response,
   next: NextFunction
 ) {
   // get bearer token from header
@@ -25,7 +27,7 @@ export async function authMiddleware(
   }
 
   try {
-    const user = await db.userInfo(userReq);
+    const user = await db.userInfo(userReq.phone_number);
     if (!user) {
       logger.error("authMiddleware: user not found");
       return res.status(401).send(text.ACCOUNT_NOT_FOUND);
@@ -46,14 +48,31 @@ export async function authMiddleware(
   }
 }
 
-/**
- *
- * @param {number} maxPerMinute
- * @returns
- */
-export function publicApiLimiter(maxPerMinute: number = 6) {
-  rateLimit({
-    windowMs: 60 * 1000, // 1 minutes
+export function publicApiLimiter(maxPerMinute: number = 6): RequestHandler {
+  return rateLimit({
+    windowMs: 60 * 1000,
     max: maxPerMinute,
   });
+}
+
+export function validation<T extends object>() {
+  return function (req: Request, res: Response, next: NextFunction) {
+    const output: LoginReq = req.body;
+    logger.info(typeof output);
+    validate(output).then((errors) => {
+      // errors is an array of validation errors
+      if (errors.length > 0) {
+        console.log(errors);
+        let errorTexts = Array();
+        for (const errorItem of errors) {
+          errorTexts = errorTexts.concat(errorItem.constraints);
+        }
+        res.status(400).send(errorTexts);
+        return;
+      } else {
+        res.locals.input = output;
+        next();
+      }
+    });
+  };
 }

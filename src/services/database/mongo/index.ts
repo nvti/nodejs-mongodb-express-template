@@ -20,3 +20,9 @@ mongoose.connection.on("error", (error) => {
 mongoose.connection.on("disconnected", () => {
   logger.info("Mongo connection is disconnected");
 });
+
+import * as user from "./user";
+
+export default {
+  ...user,
+};
